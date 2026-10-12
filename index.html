@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Certificate Verification | SUMSA</title>
+<style>
+    :root {
+        --navy: #224469;
+        --navy-deep: #17304b;
+        --teal: #12a398;
+        --slate: #4f6466;
+        --ink: #1d2b3a;
+        --muted: #627181;
+        --line: #dde3ea;
+        --paper: #f4f6f8;
+        --card: #ffffff;
+        --ok: #1b7f4b;      --ok-bg: #eef8f2;
+        --bad: #b3261e;     --bad-bg: #fdf0ef;
+        --warn: #8a5a00;    --warn-bg: #fff6e0;
+        --serif: Georgia, "Times New Roman", "Noto Serif", serif;
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+        font-family: var(--sans);
+        background: var(--paper);
+        color: var(--ink);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        line-height: 1.5;
+    }
+
+    /* ---------- header ---------- */
+    .site-header { background: var(--navy-deep); border-bottom: 3px solid var(--teal); }
+    .site-header .wrap {
+        max-width: 720px; margin: 0 auto; padding: 22px 20px 20px;
+        display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+    }
+    .logos { display: flex; gap: 12px; justify-content: center; }
+    .logos img, .logo-ph {
+        height: 72px; width: 72px; object-fit: contain;
+        background: #fff; border-radius: 50%; padding: 4px;
+    }
+    .logo-ph {
+        display: grid; place-items: center; padding: 0;
+        border: 2px dashed #9aa9ba; color: #6b7c90;
+        font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .org { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .org-name { color: #fff; font-family: var(--serif); font-size: 17px; line-height: 1.25; }
+    .org-sub { color: #9fd9d3; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; margin-top: 3px; }
+
+    /* ---------- main ---------- */
+    main { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 32px 20px 24px; }
+
+    .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-top: 4px solid var(--slate);
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(23, 48, 75, .06), 0 8px 24px rgba(23, 48, 75, .05);
+    }
+    .card.ok   { border-top-color: var(--ok); }
+    .card.bad  { border-top-color: var(--bad); }
+    .card.warn { border-top-color: #c98a00; }
+
+    .verdict { display: flex; gap: 16px; align-items: flex-start; padding: 28px 32px 24px; }
+    .badge {
+        flex: 0 0 44px; height: 44px; border-radius: 50%;
+        display: grid; place-items: center;
+        background: #e9edf1; color: var(--slate);
+    }
+    .badge svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .ok   .badge { background: var(--ok-bg);   color: var(--ok); }
+    .bad  .badge { background: var(--bad-bg);  color: var(--bad); }
+    .warn .badge { background: var(--warn-bg); color: var(--warn); }
+
+    .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    .ok   .eyebrow { color: var(--ok); }
+    .bad  .eyebrow { color: var(--bad); }
+    .warn .eyebrow { color: var(--warn); }
+    h1 { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.2; color: var(--navy-deep); margin-top: 4px; }
+    .message { color: var(--muted); font-size: 15px; margin-top: 8px; }
+
+    .recipient { padding: 22px 32px; border-top: 1px solid var(--line); background: #fafbfc; }
+    .recipient:empty { display: none; }
+    .recipient .label { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .recipient .name { font-family: var(--serif); font-size: 30px; line-height: 1.2; color: var(--navy); margin-top: 6px; word-break: break-word; }
+
+    dl.details { border-top: 1px solid var(--line); }
+    dl.details:empty { display: none; }
+    .row { display: grid; grid-template-columns: 170px 1fr; gap: 16px; padding: 15px 32px; border-bottom: 1px solid var(--line); }
+    .row:last-child { border-bottom: 0; }
+    dt { font-size: 13px; color: var(--muted); font-weight: 600; }
+    dd { font-size: 16px; color: var(--ink); word-break: break-word; }
+    dd.mono { font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 15px; letter-spacing: .02em; }
+    dd.strong { font-weight: 600; }
+    dd.good { color: var(--ok); font-weight: 600; }
+
+    .loading-bar { height: 3px; background: var(--line); overflow: hidden; border-radius: 0 0 2px 2px; display: none; }
+    .loading .loading-bar { display: block; }
+    .loading-bar::after { content: ""; display: block; height: 100%; width: 35%; background: var(--teal); animation: slide 1.1s ease-in-out infinite; }
+    @keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+    @media (prefers-reduced-motion: reduce) { .loading-bar::after { animation: none; width: 100%; opacity: .5; } }
+
+    .note { margin: 20px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .note strong { color: var(--ink); font-weight: 600; }
+
+    footer { max-width: 720px; width: 100%; margin: 0 auto; padding: 20px 20px 32px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); text-align: center; }
+    footer .contact { margin-top: 0; }
+    footer .checked { margin-top: 14px; }
+    footer .rights { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+    footer .contact-title { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); margin-bottom: 6px; }
+    footer .contact a { color: var(--navy); text-decoration: none; border-bottom: 1px solid var(--line); word-break: break-all; }
+    footer .contact a:hover, footer .contact a:focus { border-bottom-color: var(--teal); color: var(--navy-deep); }
+    footer .contact p + p { margin-top: 2px; }
+
+    @media (max-width: 560px) {
+        .site-header .wrap { padding: 18px 16px 16px; gap: 10px; }
+        .logos img, .logo-ph { height: 60px; width: 60px; }
+        .org-name { font-size: 15px; }
+        main { padding: 20px 14px 16px; }
+        .verdict { padding: 22px 20px 20px; gap: 14px; }
+        h1 { font-size: 23px; }
+        .recipient { padding: 18px 20px; }
+        .recipient .name { font-size: 24px; }
+        .row { grid-template-columns: 1fr; gap: 2px; padding: 13px 20px; }
+        footer { padding: 14px 16px 28px; }
+    }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="wrap">
+        <div class="logos" id="logos"></div>
+        <div class="org">
+            <span class="org-name">Sudan University Medical Students' Association</span>
+            <span class="org-sub">Certificate Verification</span>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="card loading" id="card" aria-live="polite">
+        <div class="verdict">
+            <div class="badge" id="badge" aria-hidden="true"></div>
+            <div>
+                <div class="eyebrow" id="eyebrow">Please wait</div>
+                <h1 id="title">Checking certificate…</h1>
+                <p class="message" id="message"></p>
+            </div>
+        </div>
+        <div class="recipient" id="recipient"></div>
+        <dl class="details" id="details"></dl>
+        <div class="loading-bar"></div>
+    </section>
+
+    <p class="note">
+        A certificate is genuine only if its <strong>code</strong> and the <strong>name</strong> printed on it
+        match the official register of the association. If the details above differ from the paper or PDF
+        in front of you, treat the certificate as unverified.
+    </p>
+</main>
+
+<footer>
+    <div class="contact">
+        <div class="contact-title">Questions about a certificate?</div>
+        <p>General enquiries: <a href="mailto:official.sumsa@gmail.com">official.sumsa@gmail.com</a></p>
+        <p>Secretary General: <a href="mailto:sumsa.secgen@gmail.com">sumsa.secgen@gmail.com</a></p>
+    </div>
+    <div class="checked" id="checked"></div>
+    <div class="rights">All rights reserved &reg; to Sudan University Medical Students' Association (SUMSA)</div>
+</footer>
+
+<script>
+    const ICONS = {
+        ok:      '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+        bad:     '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+        warn:    '<svg viewBox="0 0 24 24"><path d="M12 7v6.5M12 17.2v.1"/></svg>',
+        loading: '<svg viewBox="0 0 24 24"><path d="M12 6v6l4 2"/></svg>'
+    };
+
+    // ---- This function MUST stay identical to normalise_name() in the app. ----
+    function normaliseName(name) {
+        return name.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    async function sha256Hex(text) {
+        const bytes = new TextEncoder().encode(text);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // The register and logos sit in the main folder. The organisation pages
+    // (medsin/, sumra/) are copies of this file and look one folder up.
+    async function loadRegistry() {
+        for (const url of ['registry.json', '../registry.json']) {
+            try {
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) continue;
+                const data = await response.json();
+                if (data && data.certificates) return data;
+            } catch (e) { /* try the next location */ }
+        }
+        return null;
+    }
+
+    function addLogo(files, alt) {
+        const img = document.createElement('img');
+        const sources = files.slice();
+        img.alt = alt;
+        img.onerror = () => {
+            if (sources.length) { img.src = sources.shift(); return; }
+            // No logo file found: show a placeholder until logo.png is uploaded to the repo
+            const ph = document.createElement('div');
+            ph.className = 'logo-ph';
+            ph.textContent = 'Logo';
+            img.replaceWith(ph);
+        };
+        img.src = sources.shift();
+        document.getElementById('logos').append(img);
+    }
+
+    function orgFromCode(code) {
+        const prefix = code.split('-')[0];
+        return { SUMSA: 'SUMSA', MEDSIN: 'MedSIN-SUMSA', SUMRA: 'SUMRA' }[prefix] || '';
+    }
+
+    function render(state, eyebrow, title, message) {
+        const card = document.getElementById('card');
+        card.className = 'card ' + state;
+        document.getElementById('badge').innerHTML = ICONS[state];
+        document.getElementById('eyebrow').textContent = eyebrow;
+        document.getElementById('title').textContent = title;
+        document.getElementById('message').textContent = message;
+        document.getElementById('recipient').textContent = '';
+        document.getElementById('details').textContent = '';
+    }
+
+    function showRecipient(label, name) {
+        const box = document.getElementById('recipient');
+        box.textContent = '';
+        const l = document.createElement('div'); l.className = 'label'; l.textContent = label;
+        const n = document.createElement('div'); n.className = 'name';  n.textContent = name;
+        box.append(l, n);
+    }
+
+    function showDetails(rows) {
+        const dl = document.getElementById('details');
+        dl.textContent = '';
+        for (const [label, value, cls] of rows) {
+            const row = document.createElement('div'); row.className = 'row';
+            const dt = document.createElement('dt');   dt.textContent = label;
+            const dd = document.createElement('dd');   dd.textContent = value;  // textContent: nothing from the link is ever run as HTML
+            if (cls) dd.className = cls;
+            row.append(dt, dd);
+            dl.append(row);
+        }
+    }
+
+    function formatDate(iso) {
+        const d = new Date(iso + 'T00:00:00');
+        return isNaN(d) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    async function verify() {
+        const params = new URLSearchParams(window.location.search);
+        const code = (params.get('id') || '').trim().toUpperCase();
+        const name = (params.get('name') || '').trim();
+
+        addLogo(['logo.png', '../logo.png'], 'SUMSA logo');
+        if (code.startsWith('SUMRA-')) addLogo(['sumra_logo.png', '../sumra_logo.png'], 'SUMRA logo');
+
+        if (!code || !name) {
+            render('warn', 'Nothing scanned', 'No certificate to check',
+                   'Scan the QR code printed on a certificate to verify it.');
+            return;
+        }
+        if (!window.crypto || !crypto.subtle) {
+            render('warn', 'Unsupported browser', 'Cannot verify here',
+                   'Please open this link in an up-to-date browser such as Chrome, Edge, Safari or Firefox.');
+            return;
+        }
+
+        const registry = await loadRegistry();
+        if (!registry) {
+            render('warn', 'Register unavailable', 'Could not check this certificate',
+                   'The list of issued certificates could not be loaded. Check your internet connection and try again.');
+            return;
+        }
+
+        const hash = await sha256Hex(code + '|' + normaliseName(name));
+        const entry = registry.certificates[hash];
+        const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('checked').textContent = 'Checked against the official register on ' + today + '.';
+
+        if (entry) {
+            render('ok', 'Verified', 'This certificate is authentic',
+                   'It appears in the official register of the association.');
+            showRecipient('Awarded to', name);
+            const rows = [['Certificate ID', code, 'mono']];
+            const org = orgFromCode(code);
+            if (org) rows.push(['Issuing body', org, 'strong']);
+            if (entry.issued) rows.push(['Date of issue', formatDate(entry.issued), 'strong']);
+            rows.push(['Register status', 'Valid', 'good']);
+            showDetails(rows);
+        } else {
+            render('bad', 'Not verified', 'This certificate could not be verified',
+                   'No certificate with this code and name exists in our register. It may be forged or altered, ' +
+                   'or it may have been withdrawn. Please contact the association to confirm.');
+            showDetails([['Certificate ID', code, 'mono'], ['Name on link', name]]);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        render('loading', 'Please wait', 'Checking certificate…', '');
+        verify().catch(() => render('warn', 'Error', 'Could not check this certificate',
+            'Something went wrong while checking this certificate. Please try again.'));
+    });
+</script>
+</body>
+</html>
